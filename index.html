@@ -146,6 +146,14 @@
                         </div>
                         
                         <div class="mt-3">
+                            <label for="principalId" class="form-label">Principal ID (optional)</label>
+                            <input type="text" class="form-control" id="principalId" placeholder="acme_corp, luxury_brands_inc, etc.">
+
+                            <div class="form-text">Enter a principal ID to access personalized and private segments. Leave empty for public segments only.</div>
+
+                        </div>
+                        
+                        <div class="mt-3">
                             <button type="button" class="btn btn-primary" onclick="fetchSignals()">
                                 <i class="bi bi-search me-2"></i>
                                 Fetch Signals
@@ -182,6 +190,7 @@
             const signalSpec = document.getElementById('signalSpec').value.trim();
             const maxResults = document.getElementById('maxResults').value;
             const baseUrl = document.getElementById('baseUrl').value.trim();
+            const principalId = document.getElementById('principalId')?.value.trim() || '';
             const resultContainer = document.getElementById('resultContainer');
             const loadingOverlay = document.getElementById('loadingOverlay');
             
@@ -191,7 +200,12 @@
             }
             
             const base = baseUrl || window.location.origin;
-            const url = `${base}/api/signals?spec=${encodeURIComponent(signalSpec)}&max_results=${maxResults}`;
+            let url = `${base}/api/signals?spec=${encodeURIComponent(signalSpec)}&max_results=${maxResults}`;
+            
+            // Add principal_id parameter if provided
+            if (principalId) {
+                url += `&principal_id=${encodeURIComponent(principalId)}`;
+            }
             
             if (currentController) {
                 currentController.abort();
