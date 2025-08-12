@@ -69,40 +69,40 @@
                     if (query) {
                         fetchSignals(query, maxResults);
                     } else {
-            }
-            
-            // Test backend connectivity on page load
-            testBackendConnectivity();
                         alert('Please enter a search query');
                     }
                 });
             } else {
+                console.error('Search form not found!');
             }
             
             // Test backend connectivity on page load
             testBackendConnectivity();
-                console.error('Search form not found!');
-            }
         });
-
+        
         async function testBackendConnectivity() {
             try {
-                console.log("Testing backend connectivity...");
-                const response = await fetch("https://signals-agent-backend.onrender.com/health", {
-                    method: "GET",
-                    signal: AbortSignal.timeout(5000)
+                console.log('Testing backend connectivity...');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch('https://signals-agent-backend.onrender.com/health', {
+                    method: 'GET',
+                    signal: controller.signal
                 });
                 
+                clearTimeout(timeoutId);
+                
                 if (response.ok) {
-                    console.log("✅ Backend is reachable");
+                    console.log('✅ Backend is reachable');
                 } else {
-                    console.log("⚠️ Backend responded but with status:", response.status);
+                    console.log('⚠️ Backend responded but with status:', response.status);
                 }
             } catch (error) {
-                console.log("❌ Backend connectivity test failed:", error.message);
+                console.log('❌ Backend connectivity test failed:', error.message);
             }
         }
-        
+
         async function fetchSignals(query, maxResults = 10) {
             console.log('fetchSignals called with:', query, maxResults);
             
@@ -116,18 +116,19 @@
                 const url = `https://signals-agent-backend.onrender.com/api/signals?spec=${encodeURIComponent(query)}&max_results=${maxResults}`;
                 console.log('Fetching from URL:', url);
                 
+                // Create AbortController for timeout
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => {
-                    console.log("Request timeout - aborting");
+                    console.log('Request timeout - aborting');
                     controller.abort();
-                }, 30000);
+                }, 30000); // 30 second timeout
                 
                 const response = await fetch(url, {
                     signal: controller.signal,
-                    method: "GET",
+                    method: 'GET',
                     headers: {
-                        "Accept": "application/json",
-                        "Content-Type": "application/json"
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 });
                 
@@ -147,7 +148,12 @@
             } catch (error) {
                 clearTimeout(timeoutId);
                 console.error('Error fetching signals:', error);
-                alert('Error fetching signals: ' + error.message);
+                
+                if (error.name === 'AbortError') {
+                    alert('Request timed out after 30 seconds. The backend might be slow to respond or down.');
+                } else {
+                    alert('Error fetching signals: ' + error.message);
+                }
             } finally {
                 // Restore button state
                 submitBtn.innerHTML = originalText;
@@ -189,10 +195,6 @@
                 
                 html += '</tbody></table></div>';
             } else {
-            }
-            
-            // Test backend connectivity on page load
-            testBackendConnectivity();
                 html += '<p class="text-muted">No signals found.</p>';
             }
             
