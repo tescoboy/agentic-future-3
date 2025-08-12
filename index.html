@@ -45,6 +45,21 @@
             padding: 15px;
             margin-bottom: 20px;
         }
+        .results-header {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .custom-proposals-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .custom-proposals-link:hover {
+            text-decoration: underline;
+        }
         .nav-tabs .nav-link {
             border: none;
             color: #666;
@@ -66,151 +81,6 @@
         .table td {
             vertical-align: middle;
             font-size: 14px;
-        }
-        
-        /* Loading Screen Styles */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            backdrop-filter: blur(10px);
-        }
-        
-        .loading-content {
-            text-align: center;
-            color: white;
-            max-width: 400px;
-            padding: 40px;
-        }
-        
-        .loading-spinner {
-            width: 80px;
-            height: 80px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 30px;
-        }
-        
-        .loading-pulse {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            margin: 0 auto 30px;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        .loading-text {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            animation: fadeInUp 0.6s ease-out;
-        }
-        
-        .loading-subtext {
-            font-size: 16px;
-            opacity: 0.8;
-            margin-bottom: 30px;
-            animation: fadeInUp 0.6s ease-out 0.2s both;
-        }
-        
-        .loading-progress {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        
-        .loading-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #fff, #f0f0f0);
-            border-radius: 2px;
-            animation: progress 3s ease-in-out infinite;
-        }
-        
-        .loading-steps {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-            font-size: 12px;
-            opacity: 0.7;
-        }
-        
-        .loading-step {
-            opacity: 0.5;
-            transition: opacity 0.3s ease;
-        }
-        
-        .loading-step.active {
-            opacity: 1;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.7; }
-            50% { transform: scale(1.1); opacity: 1; }
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes progress {
-            0% { width: 0%; }
-            50% { width: 70%; }
-            100% { width: 100%; }
-        }
-        
-        .loading-dots {
-            display: inline-block;
-            animation: dots 1.5s infinite;
-        }
-        
-        @keyframes dots {
-            0%, 20% { content: ""; }
-            40% { content: "."; }
-            60% { content: ".."; }
-            80%, 100% { content: "..."; }
-        }
-        
-        .loading-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-            animation: bounce 2s infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-10px);
-            }
-            60% {
-                transform: translateY(-5px);
-            }
         }
     </style>
 </head>
@@ -247,6 +117,19 @@
 
         <!-- Results Section -->
         <div id="resultsSection" style="display: none;">
+            <!-- Results Header -->
+            <div class="results-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 id="resultsTitle" class="mb-2">Signals for '<span id="queryDisplay"></span>'</h4>
+                        <p id="resultsSummary" class="text-muted mb-0"></p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="#" id="customProposalsLink" class="custom-proposals-link">Custom Proposals (<span id="proposalsCount">0</span>) ></a>
+                    </div>
+                </div>
+            </div>
+
             <!-- Metrics Boxes -->
             <div class="row mb-4" id="metricsRow">
                 <div class="col-md-3">
@@ -345,26 +228,6 @@
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-content">
-            <div class="loading-icon">
-                <i class="bi bi-search"></i>
-            </div>
-            <div class="loading-text">Searching for Signals</div>
-            <div class="loading-subtext">Analyzing your query with AI<span class="loading-dots"></span></div>
-            <div class="loading-progress">
-                <div class="loading-progress-bar"></div>
-            </div>
-            <div class="loading-steps">
-                <div class="loading-step active" id="step1">Processing Query</div>
-                <div class="loading-step" id="step2">AI Analysis</div>
-                <div class="loading-step" id="step3">Finding Matches</div>
-                <div class="loading-step" id="step4">Generating Results</div>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -422,19 +285,7 @@
         async function fetchSignals(query, maxResults = 10) {
             console.log('fetchSignals called with:', query, maxResults);
             
-            // Show loading overlay
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            loadingOverlay.style.display = 'flex';
-            
-            // Start step animation
-            let currentStep = 1;
-            let stepInterval = setInterval(() => {
-                document.querySelectorAll('.loading-step').forEach(step => step.classList.remove('active'));
-                document.getElementById(`step${currentStep}`).classList.add('active');
-                currentStep = currentStep >= 4 ? 1 : currentStep + 1;
-            }, 800);
-            
-            // Show loading state on button
+            // Show loading state
             const submitBtn = document.querySelector('#searchForm button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Searching...';
@@ -483,15 +334,6 @@
                     alert('Error fetching signals: ' + error.message);
                 }
             } finally {
-                // Hide loading overlay
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                loadingOverlay.style.display = 'none';
-                
-                // Clear step animation
-                clearInterval(stepInterval);
-                document.querySelectorAll('.loading-step').forEach(step => step.classList.remove('active'));
-                document.getElementById('step1').classList.add('active');
-                
                 // Restore button state
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
@@ -504,12 +346,17 @@
             const resultsSection = document.getElementById('resultsSection');
             resultsSection.style.display = 'block';
             
+            // Update header
+            document.getElementById('queryDisplay').textContent = query;
+            document.getElementById('resultsSummary').textContent = data.message || 'N/A';
+            
             // Update metrics
             const signals = data.signals || [];
             const proposals = data.custom_segment_proposals || [];
             
             document.getElementById('foundCount').textContent = signals.length;
             document.getElementById('signalsCount').textContent = signals.length;
+            document.getElementById('proposalsCount').textContent = proposals.length;
             document.getElementById('proposalsTabCount').textContent = proposals.length;
             document.getElementById('rankingMethod').textContent = data.ranking_method || 'N/A';
             
@@ -602,4 +449,3 @@
     </script>
 </body>
 </html>
-    
