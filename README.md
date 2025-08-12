@@ -80,3 +80,4 @@ app.add_middleware(
 - **Bootstrap 5**: Responsive framework
 - **Bootswatch Cosmo**: Beautiful theme
 - **Vercel**: Deployment platform
+
