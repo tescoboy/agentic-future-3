@@ -1,1 +1,49 @@
-{"version": 2, "name": "signals-demo-frontend", "routes": [{"src": "/(.*)", "dest": "/index.html"}]}
+{
+  "version": 2,
+  "name": "signals-demo-frontend",
+  "builds": [
+    {
+      "src": "signals-agent-backend/**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/signals-agent-backend/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/signals-agent-backend/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "**/*.html",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "**/*.css",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/css; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "**/*.js",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        }
+      ]
+    }
+  ]
+}
