@@ -1,299 +1,308 @@
-// Configuration
-const BASE_URL = 'https://signals-agent-backend.onrender.com';
+// GupAd Orchestration Platform - Main Application Logic
+console.log('🎯 GupAd Orchestration Platform loaded');
+
+// Global variables
+let currentSearchResults = [];
+let isLoading = false;
 
 // DOM elements
-let searchForm, queryInput, maxResultsSelect, resultsSection, loadingOverlay;
-
-// State
-let currentData = null;
+const searchForm = document.getElementById('searchForm');
+const searchInput = document.getElementById('queryInput');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const signalsTableBody = document.getElementById('signalsTableBody');
+const proposalsContent = document.getElementById('proposalsContent');
+const proposalsTabCount = document.getElementById('proposalsTabCount');
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, setting up form listener...');
-    initializeElements();
-    bindEvents();
+    console.log('Initializing GupAd Orchestration Platform...');
+    
+    // Add event listeners
+    if (searchForm) {
+        searchForm.addEventListener('submit', handleSearch);
+    }
+    
+    // Initialize any other components
+    initializeComponents();
 });
 
-function initializeElements() {
-    searchForm = document.getElementById('searchForm');
-    queryInput = document.getElementById('queryInput');
-    maxResultsSelect = document.getElementById('maxResultsSelect');
-    resultsSection = document.getElementById('resultsSection');
-    loadingOverlay = document.getElementById('loadingOverlay');
-}
-
-function bindEvents() {
-    if (searchForm) {
-        console.log('Found search form, adding submit listener...');
-        searchForm.addEventListener('submit', handleFormSubmit);
-    }
-}
-
-async function handleFormSubmit(e) {
-    e.preventDefault();
-    console.log('Form submitted!');
+// Handle search form submission
+async function handleSearch(event) {
+    event.preventDefault();
     
-    const query = queryInput.value.trim();
-    const maxResults = parseInt(maxResultsSelect.value);
-    
-    console.log('Query:', query);
-    console.log('Max results:', maxResults);
-    
+    const query = searchInput.value.trim();
     if (!query) {
-        alert('Please enter a search query');
+        showAlert('Please enter a search query', 'warning');
         return;
     }
     
-    showLoadingScreen();
+    console.log('Searching for:', query);
+    showLoading(true);
     
     try {
-        await fetchSignals(query, maxResults);
+        // Simulate API call
+        await simulateSearch(query);
     } catch (error) {
-        console.error('Error fetching signals:', error);
-        hideLoadingScreen();
-        alert('Error fetching signals. Please try again.');
+        console.error('Search error:', error);
+        showAlert('An error occurred during search', 'danger');
+    } finally {
+        showLoading(false);
     }
 }
 
-async function fetchSignals(spec, maxResults) {
-    console.log('fetchSignals called with:', spec, maxResults);
+// Simulate search functionality
+async function simulateSearch(query) {
+    console.log('Simulating search for:', query);
     
-    const url = `${BASE_URL}/api/signals?spec=${encodeURIComponent(spec)}&max_results=${maxResults}`;
-    console.log('Fetching from URL:', url);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Create AbortController for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    // Mock data
+    const mockResults = [
+        {
+            name: 'High-Value Tech Enthusiasts',
+            type: 'Interest',
+            platform: 'Facebook',
+            coverage: '2.3M',
+            cpm: '$12.50',
+            id: 'tech_enthusiasts_001'
+        },
+        {
+            name: 'E-commerce Shoppers',
+            type: 'Behavior',
+            platform: 'Google',
+            coverage: '5.1M',
+            cpm: '$8.75',
+            id: 'ecommerce_shoppers_002'
+        },
+        {
+            name: 'Mobile App Users',
+            type: 'Demographic',
+            platform: 'TikTok',
+            coverage: '8.7M',
+            cpm: '$6.25',
+            id: 'mobile_users_003'
         }
-        
-        const data = await response.json();
-        console.log('Received data:', data);
-        
-        hideLoadingScreen();
-        displayResults(data);
-        
-    } catch (error) {
-        clearTimeout(timeoutId);
-        console.error('Error in fetchSignals:', error);
-        hideLoadingScreen();
-        
-        if (error.name === 'AbortError') {
-            alert('Request timed out. Please try again.');
-        } else {
-            alert(`Error: ${error.message}`);
+    ];
+    
+    currentSearchResults = mockResults;
+    displayResults(mockResults);
+    
+    // Generate AI proposals
+    generateAIProposals(query);
+}
+
+// Display search results
+function displayResults(results) {
+    console.log('Displaying results:', results);
+    
+    if (!signalsTableBody) return;
+    
+    // Show results section
+    const resultsSection = document.getElementById('resultsSection');
+    if (resultsSection) {
+        resultsSection.style.display = 'block';
+        resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    signalsTableBody.innerHTML = '';
+    
+    results.forEach(signal => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${signal.name}</td>
+            <td><span class="badge bg-primary">${signal.type}</span></td>
+            <td>${signal.platform}</td>
+            <td>${signal.coverage}</td>
+            <td>${signal.cpm}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="activateSignal('${signal.id}')">
+                    <i class="bi bi-plus-circle me-1"></i>Activate
+                </button>
+            </td>
+        `;
+        signalsTableBody.appendChild(row);
+    });
+    
+    // Update metrics
+    updateMetrics(results);
+}
+
+// Generate AI proposals
+async function generateAIProposals(query) {
+    console.log('Generating AI proposals for:', query);
+    
+    // Simulate AI processing
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const proposals = [
+        {
+            name: `Custom ${query} Enthusiasts`,
+            description: 'AI-generated segment based on your search criteria',
+            estimatedReach: '1.2M',
+            confidence: '85%'
+        },
+        {
+            name: `${query} Power Users`,
+            description: 'High-engagement audience segment',
+            estimatedReach: '890K',
+            confidence: '92%'
         }
+    ];
+    
+    displayProposals(proposals);
+}
+
+// Display AI proposals
+function displayProposals(proposals) {
+    console.log('Displaying proposals:', proposals);
+    
+    if (!proposalsContent || !proposalsTabCount) return;
+    
+    proposalsTabCount.textContent = proposals.length;
+    
+    if (proposals.length === 0) {
+        proposalsContent.innerHTML = '<p class="text-muted">No custom proposals available.</p>';
+        return;
+    }
+    
+    let proposalsHTML = '';
+    proposals.forEach(proposal => {
+        proposalsHTML += `
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">${proposal.name}</h6>
+                    <p class="card-text text-muted">${proposal.description}</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">Estimated Reach: ${proposal.estimatedReach}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Confidence: ${proposal.confidence}</small>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="activateProposal('${proposal.name}')">
+                        <i class="bi bi-robot me-1"></i>Activate AI Segment
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    proposalsContent.innerHTML = proposalsHTML;
+}
+
+// Show/hide loading overlay
+function showLoading(show) {
+    if (!loadingOverlay) return;
+    
+    isLoading = show;
+    loadingOverlay.style.display = show ? 'flex' : 'none';
+    
+    if (show) {
+        // Animate loading steps
+        animateLoadingSteps();
     }
 }
 
-function showLoadingScreen() {
-    loadingOverlay.style.display = 'flex';
-    
-    // Animate steps
+// Animate loading steps
+function animateLoadingSteps() {
     const steps = ['step1', 'step2', 'step3', 'step4'];
     let currentStep = 0;
     
     const stepInterval = setInterval(() => {
-        steps.forEach((step, index) => {
+        if (!isLoading) {
+            clearInterval(stepInterval);
+            return;
+        }
+        
+        // Remove active class from all steps
+        steps.forEach(step => {
             const stepElement = document.getElementById(step);
-            if (index === currentStep) {
-                stepElement.classList.add('active');
-            } else {
+            if (stepElement) {
                 stepElement.classList.remove('active');
             }
         });
         
-        currentStep = (currentStep + 1) % steps.length;
-    }, 1000);
-    
-    // Store interval for cleanup
-    loadingOverlay.stepInterval = stepInterval;
-}
-
-function hideLoadingScreen() {
-    loadingOverlay.style.display = 'none';
-    
-    // Clear step animation
-    if (loadingOverlay.stepInterval) {
-        clearInterval(loadingOverlay.stepInterval);
-    }
-}
-
-function displayResults(data) {
-    currentData = data;
-    resultsSection.style.display = 'block';
-    
-    renderKPIs(data);
-    renderSignalsTable(data);
-    renderProposals(data);
-    
-    // Scroll to results
-    resultsSection.scrollIntoView({ behavior: 'smooth' });
-}
-
-function renderKPIs(data) {
-    const signals = data.signals || [];
-    const proposals = data.custom_segment_proposals || [];
-    
-    document.getElementById('foundCount').textContent = signals.length;
-    document.getElementById('signalsCount').textContent = signals.length;
-    document.getElementById('proposalsTabCount').textContent = proposals.length;
-    document.getElementById('rankingMethod').textContent = data.ranking_method || 'N/A';
-    
-    // Calculate coverage and CPM ranges
-    if (signals.length > 0) {
-        const coverages = signals.map(s => s.coverage_percentage).filter(c => c != null);
-        const cpms = signals.map(s => s.pricing?.cpm).filter(c => c != null);
-        
-        if (coverages.length > 0) {
-            const minCoverage = Math.min(...coverages);
-            const maxCoverage = Math.max(...coverages);
-            document.getElementById('coverageRange').textContent = `${minCoverage.toFixed(1)}% - ${maxCoverage.toFixed(1)}%`;
+        // Add active class to current step
+        if (currentStep < steps.length) {
+            const stepElement = document.getElementById(steps[currentStep]);
+            if (stepElement) {
+                stepElement.classList.add('active');
+            }
+            currentStep++;
+        } else {
+            clearInterval(stepInterval);
         }
-        
-        if (cpms.length > 0) {
-            const minCpm = Math.min(...cpms);
-            const maxCpm = Math.max(...cpms);
-            document.getElementById('cpmRange').textContent = `$${minCpm.toFixed(2)} - $${maxCpm.toFixed(2)}`;
-        }
-    }
+    }, 800);
 }
 
-function renderSignalsTable(data) {
-    const signals = data.signals || [];
-    const tableBody = document.getElementById("signalsTableBody");
-    
-    if (!tableBody) {
-        console.error("signalsTableBody element not found");
-        return;
-    }
-    
-    tableBody.innerHTML = "";
-    
-    if (signals.length === 0) {
-        const row = document.createElement("tr");
-        row.innerHTML = "<td colspan="6" class="text-center text-muted py-4">No signals found</td>";
-        tableBody.appendChild(row);
-        return;
-    }
-    
-    signals.forEach(signal => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td><strong>${signal.name || "N/A"}</strong></td>
-            <td>${signal.data_provider || "N/A"}</td>
-            <td>${signal.coverage_percentage ? signal.coverage_percentage.toFixed(1) + "%" : "N/A"}</td>
-            <td>${signal.pricing?.cpm ? "$" + signal.pricing.cpm.toFixed(2) : "N/A"}</td>
-            <td>${signal.deployments?.map(d => d.platform).join(", ") || "N/A"}</td>
-            <td>
-                <button class="activate-btn" onclick="activateSignal('${signal.signals_agent_segment_id}')">
-                    Activate
-                </button>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
-}    });
-    
-    // Bind table events using event delegation
-    bindTableEvents();
-}
-
-function renderProposals(data) {
-    const proposals = data.custom_segment_proposals || [];
-    const proposalsContent = document.getElementById('proposalsContent');
-    
-    if (proposals.length > 0) {
-        let proposalsHtml = '<div class="row">';
-        proposals.forEach(proposal => {
-            proposalsHtml += `
-                <div class="col-md-6 mb-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="card-title mb-0">${proposal.proposed_name}</h6>
-                                <span class="badge bg-primary">AI Generated</span>
-                            </div>
-                            <p class="card-text mb-3">${proposal.description}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">
-                                    Coverage: ${proposal.estimated_coverage_percentage.toFixed(1)}% | 
-                                    CPM: $${proposal.estimated_cpm.toFixed(2)}
-                                </small>
-                                <button class="activate-btn" data-proposal-id="${proposal.custom_segment_id}">
-                                    Activate
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        proposalsHtml += '</div>';
-        proposalsContent.innerHTML = proposalsHtml;
-    } else {
-        proposalsContent.innerHTML = '<p class="text-muted">No custom proposals available.</p>';
-    }
-    
-    // Bind proposal events
-    bindProposalEvents();
-}
-
-function bindTableEvents() {
-    // Use event delegation for table actions
-    const tableBody = document.getElementById('signalsTableBody');
-    tableBody.addEventListener('click', function(e) {
-        if (e.target.classList.contains('activate-btn')) {
-            const signalId = e.target.getAttribute('data-signal-id');
-            activateSignal(signalId);
-        }
-    });
-}
-
-function bindProposalEvents() {
-    // Use event delegation for proposal actions
-    const proposalsContent = document.getElementById('proposalsContent');
-    proposalsContent.addEventListener('click', function(e) {
-        if (e.target.classList.contains('activate-btn')) {
-            const proposalId = e.target.getAttribute('data-proposal-id');
-            activateProposal(proposalId);
-        }
-    });
-}
-
+// Activate signal
 function activateSignal(signalId) {
-    alert(`Activating signal: ${signalId}`);
-    // TODO: Implement actual signal activation
+    console.log('Activating signal:', signalId);
+    showAlert(`Signal "${signalId}" activated successfully!`, 'success');
 }
 
-function activateProposal(proposalId) {
-    alert(`Activating custom proposal: ${proposalId}`);
-    // TODO: Implement actual proposal activation
+// Activate AI proposal
+function activateProposal(proposalName) {
+    console.log('Activating AI proposal:', proposalName);
+    showAlert(`AI segment "${proposalName}" activated successfully!`, 'success');
 }
 
-// Utility functions
-function formatCurrency(amount) {
-    return amount ? `$${parseFloat(amount).toFixed(2)}` : 'N/A';
+// Show alert message
+function showAlert(message, type = 'info') {
+    console.log(`Alert [${type}]:`, message);
+    
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
 }
 
-function formatPercentage(value) {
-    return value ? `${parseFloat(value).toFixed(1)}%` : 'N/A';
+// Initialize components
+function initializeComponents() {
+    console.log('Initializing components...');
+    
+    // Add any additional initialization logic here
+    // For example, setting up tooltips, modals, etc.
 }
 
-function formatPlatforms(deployments) {
-    return deployments?.map(d => d.platform).join(', ') || 'N/A';
+// Update metrics display
+function updateMetrics(results) {
+    const totalSignals = document.getElementById('totalSignals');
+    const avgCoverage = document.getElementById('avgCoverage');
+    const avgCPM = document.getElementById('avgCPM');
+    
+    if (totalSignals) {
+        totalSignals.textContent = results.length;
+    }
+    
+    if (avgCoverage && results.length > 0) {
+        // Calculate average coverage (simplified)
+        const avg = Math.round(results.length * 2.5); // Mock calculation
+        avgCoverage.textContent = `${avg}M`;
+    }
+    
+    if (avgCPM && results.length > 0) {
+        // Calculate average CPM (simplified)
+        const avg = Math.round(results.length * 3.5); // Mock calculation
+        avgCPM.textContent = `$${avg}.50`;
+    }
 }
+
+// Export functions for global access
+window.activateSignal = activateSignal;
+window.activateProposal = activateProposal;

@@ -1,16 +1,16 @@
 {
-  "name": "signals-demo",
+  "name": "gupad-orchestration-platform",
   "version": "1.0.0",
-  "description": "Signals Demo Frontend",
+  "description": "AI-Powered Audience Targeting Platform",
   "main": "index.html",
   "scripts": {
-    "dev": "npx serve .",
-    "start": "npx serve ."
+    "start": "serve -s .",
+    "build": "echo 'Static site - no build required'"
   },
-  "keywords": ["signals", "demo", "frontend"],
-  "author": "",
+  "keywords": ["ai", "audience", "targeting", "platform"],
+  "author": "GupAd Team",
   "license": "MIT",
   "devDependencies": {
-    "serve": "^14.2.1"
+    "serve": "^14.2.0"
   }
 }
