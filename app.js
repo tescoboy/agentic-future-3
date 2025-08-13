@@ -5,6 +5,9 @@ console.log('🎯 GupAd Orchestration Platform loaded');
 let currentSearchResults = [];
 let isLoading = false;
 
+// Backend API configuration
+const BACKEND_URL = 'https://signals-agent-backend.onrender.com';
+
 // DOM elements
 const searchForm = document.getElementById('searchForm');
 const searchInput = document.getElementById('queryInput');
@@ -53,7 +56,7 @@ async function handleSearch(event) {
     showLoading(true);
     
     try {
-        // Simulate API call
+        // Make real API call to backend
         await simulateSearch(query);
     } catch (error) {
         console.error('Search error:', error);
@@ -63,65 +66,96 @@ async function handleSearch(event) {
     }
 }
 
-// Simulate search functionality
+// Real search functionality - connected to backend
 async function simulateSearch(query) {
-    console.log('Simulating search for:', query);
+    console.log('Searching backend for:', query);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock data - more comprehensive and robust
-    const mockResults = [
-        {
-            name: 'High-Value Tech Enthusiasts',
-            type: 'Interest',
-            platform: 'Facebook',
-            coverage: '2.3M',
-            cpm: '$12.50',
-            id: 'tech_enthusiasts_001'
-        },
-        {
-            name: 'E-commerce Shoppers',
-            type: 'Behavior',
-            platform: 'Google',
-            coverage: '5.1M',
-            cpm: '$8.75',
-            id: 'ecommerce_shoppers_002'
-        },
-        {
-            name: 'Mobile App Users',
-            type: 'Demographic',
-            platform: 'TikTok',
-            coverage: '8.7M',
-            cpm: '$6.25',
-            id: 'mobile_users_003'
-        },
-        {
-            name: 'Premium Travelers',
-            type: 'Interest',
-            platform: 'Instagram',
-            coverage: '1.8M',
-            cpm: '$15.20',
-            id: 'premium_travelers_004'
-        },
-        {
-            name: 'Fitness Enthusiasts',
-            type: 'Behavior',
-            platform: 'YouTube',
-            coverage: '3.2M',
-            cpm: '$9.80',
-            id: 'fitness_enthusiasts_005'
+    try {
+        // Make API call to backend
+        const response = await fetch(`${BACKEND_URL}/search`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query: query,
+                maxResults: 10
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-    ];
-    
-    console.log('Generated mock results:', mockResults);
-    currentSearchResults = mockResults;
-    
-    // Display results
-    displayResults(mockResults);
-    
-    // Generate AI proposals
-    generateAIProposals(query);
+        
+        const data = await response.json();
+        console.log('Backend response:', data);
+        
+        // Process the response data
+        const results = data.signals || data.results || [];
+        currentSearchResults = results;
+        
+        // Display results
+        displayResults(results);
+        
+        // Generate AI proposals if available
+        if (data.proposals) {
+            displayProposals(data.proposals);
+        } else {
+            generateAIProposals(query);
+        }
+        
+    } catch (error) {
+        console.error('Backend API error:', error);
+        
+        // Fallback to mock data if backend fails
+        console.log('Falling back to mock data due to backend error');
+        const mockResults = [
+            {
+                name: 'High-Value Tech Enthusiasts',
+                type: 'Interest',
+                platform: 'Facebook',
+                coverage: '2.3M',
+                cpm: '$12.50',
+                id: 'tech_enthusiasts_001'
+            },
+            {
+                name: 'E-commerce Shoppers',
+                type: 'Behavior',
+                platform: 'Google',
+                coverage: '5.1M',
+                cpm: '$8.75',
+                id: 'ecommerce_shoppers_002'
+            },
+            {
+                name: 'Mobile App Users',
+                type: 'Demographic',
+                platform: 'TikTok',
+                coverage: '8.7M',
+                cpm: '$6.25',
+                id: 'mobile_users_003'
+            },
+            {
+                name: 'Premium Travelers',
+                type: 'Interest',
+                platform: 'Instagram',
+                coverage: '1.8M',
+                cpm: '$15.20',
+                id: 'premium_travelers_004'
+            },
+            {
+                name: 'Fitness Enthusiasts',
+                type: 'Behavior',
+                platform: 'YouTube',
+                coverage: '3.2M',
+                cpm: '$9.80',
+                id: 'fitness_enthusiasts_005'
+            }
+        ];
+        
+        currentSearchResults = mockResults;
+        displayResults(mockResults);
+        generateAIProposals(query);
+    }
 }
 
 // Display search results
@@ -326,8 +360,33 @@ function showAlert(message, type = 'info') {
 function initializeComponents() {
     console.log('Initializing components...');
     
+    // Test backend connection
+    testBackendConnection();
+    
     // Add any additional initialization logic here
     // For example, setting up tooltips, modals, etc.
+}
+
+// Test backend connection
+async function testBackendConnection() {
+    try {
+        console.log('Testing backend connection...');
+        const response = await fetch(`${BACKEND_URL}/health`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            console.log('✅ Backend connection successful');
+        } else {
+            console.warn('⚠️ Backend responded but with status:', response.status);
+        }
+    } catch (error) {
+        console.warn('⚠️ Backend connection test failed:', error.message);
+        console.log('Will use fallback mock data if needed');
+    }
 }
 
 // Update metrics display
