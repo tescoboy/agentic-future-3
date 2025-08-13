@@ -71,16 +71,12 @@ async function simulateSearch(query) {
     console.log('Searching backend for:', query);
     
     try {
-        // Make API call to backend
-        const response = await fetch(`${BACKEND_URL}/search`, {
-            method: 'POST',
+        // Make API call to backend using the correct endpoint
+        const response = await fetch(`${BACKEND_URL}/api/signals?spec=${encodeURIComponent(query)}&max_results=10`, {
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                query: query,
-                maxResults: 10
-            })
+            }
         });
         
         if (!response.ok) {
@@ -90,16 +86,16 @@ async function simulateSearch(query) {
         const data = await response.json();
         console.log('Backend response:', data);
         
-        // Process the response data
-        const results = data.signals || data.results || [];
+        // Process the response data - backend returns signals array
+        const results = data.signals || [];
         currentSearchResults = results;
         
         // Display results
         displayResults(results);
         
-        // Generate AI proposals if available
-        if (data.proposals) {
-            displayProposals(data.proposals);
+        // Display custom segment proposals if available
+        if (data.custom_segment_proposals) {
+            displayProposals(data.custom_segment_proposals);
         } else {
             generateAIProposals(query);
         }
@@ -190,15 +186,23 @@ function displayResults(results) {
     results.forEach((signal, index) => {
         console.log('Processing signal', index + 1, ':', signal);
         
+        // Extract data from backend format
+        const name = signal.name || 'N/A';
+        const type = signal.signal_type || signal.type || 'Unknown';
+        const platform = signal.deployments && signal.deployments.length > 0 ? signal.deployments[0].platform : 'N/A';
+        const coverage = signal.coverage_percentage ? `${signal.coverage_percentage.toFixed(1)}%` : 'N/A';
+        const cpm = signal.pricing && signal.pricing.cpm ? `$${signal.pricing.cpm.toFixed(2)}` : 'N/A';
+        const id = signal.signals_agent_segment_id || signal.id || 'unknown';
+        
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${signal.name || 'N/A'}</td>
-            <td><span class="badge bg-primary">${signal.type || 'Unknown'}</span></td>
-            <td>${signal.platform || 'N/A'}</td>
-            <td>${signal.coverage || 'N/A'}</td>
-            <td>${signal.cpm || 'N/A'}</td>
+            <td>${name}</td>
+            <td><span class="badge bg-primary">${type}</span></td>
+            <td>${platform}</td>
+            <td>${coverage}</td>
+            <td>${cpm}</td>
             <td>
-                <button class="btn btn-sm btn-outline-primary" onclick="activateSignal('${signal.id || 'unknown'}')">
+                <button class="btn btn-sm btn-outline-primary" onclick="activateSignal('${id}')">
                     <i class="bi bi-plus-circle me-1"></i>Activate
                 </button>
             </td>
@@ -252,20 +256,28 @@ function displayProposals(proposals) {
     
     let proposalsHTML = '';
     proposals.forEach(proposal => {
+        // Handle both backend format and fallback format
+        const name = proposal.proposed_name || proposal.name || 'Custom Proposal';
+        const description = proposal.description || '';
+        const estimatedReach = proposal.estimated_coverage_percentage ? `${proposal.estimated_coverage_percentage}%` : (proposal.estimatedReach || 'N/A');
+        const confidence = proposal.estimated_cpm ? `$${proposal.estimated_cpm.toFixed(2)} CPM` : (proposal.confidence || 'N/A');
+        const rationale = proposal.creation_rationale || '';
+        
         proposalsHTML += `
             <div class="card mb-3">
                 <div class="card-body">
-                    <h6 class="card-title">${proposal.name}</h6>
-                    <p class="card-text text-muted">${proposal.description}</p>
+                    <h6 class="card-title">${name}</h6>
+                    <p class="card-text text-muted">${description}</p>
+                    ${rationale ? `<p class="card-text"><small class="text-info"><strong>Rationale:</strong> ${rationale}</small></p>` : ''}
                     <div class="row">
                         <div class="col-md-6">
-                            <small class="text-muted">Estimated Reach: ${proposal.estimatedReach}</small>
+                            <small class="text-muted">Estimated Coverage: ${estimatedReach}</small>
                         </div>
                         <div class="col-md-6">
-                            <small class="text-muted">Confidence: ${proposal.confidence}</small>
+                            <small class="text-muted">Estimated CPM: ${confidence}</small>
                         </div>
                     </div>
-                    <button class="btn btn-sm btn-primary mt-2" onclick="activateProposal('${proposal.name}')">
+                    <button class="btn btn-sm btn-primary mt-2" onclick="activateProposal('${name}')">
                         <i class="bi bi-robot me-1"></i>Activate AI Segment
                     </button>
                 </div>
@@ -400,15 +412,21 @@ function updateMetrics(results) {
     }
     
     if (avgCoverage && results.length > 0) {
-        // Calculate average coverage (simplified)
-        const avg = Math.round(results.length * 2.5); // Mock calculation
-        avgCoverage.textContent = `${avg}M`;
+        // Calculate average coverage from backend data
+        const totalCoverage = results.reduce((sum, signal) => {
+            return sum + (signal.coverage_percentage || 0);
+        }, 0);
+        const avg = (totalCoverage / results.length).toFixed(1);
+        avgCoverage.textContent = `${avg}%`;
     }
     
     if (avgCPM && results.length > 0) {
-        // Calculate average CPM (simplified)
-        const avg = Math.round(results.length * 3.5); // Mock calculation
-        avgCPM.textContent = `$${avg}.50`;
+        // Calculate average CPM from backend data
+        const totalCPM = results.reduce((sum, signal) => {
+            return sum + (signal.pricing?.cpm || 0);
+        }, 0);
+        const avg = (totalCPM / results.length).toFixed(2);
+        avgCPM.textContent = `$${avg}`;
     }
 }
 
