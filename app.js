@@ -175,25 +175,39 @@ function renderKPIs(data) {
 
 function renderSignalsTable(data) {
     const signals = data.signals || [];
-    const tableBody = document.getElementById('signalsTableBody');
-    tableBody.innerHTML = '';
+    const tableBody = document.getElementById("signalsTableBody");
+    
+    if (!tableBody) {
+        console.error("signalsTableBody element not found");
+        return;
+    }
+    
+    tableBody.innerHTML = "";
+    
+    if (signals.length === 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = "<td colspan="6" class="text-center text-muted py-4">No signals found</td>";
+        tableBody.appendChild(row);
+        return;
+    }
     
     signals.forEach(signal => {
-        const row = document.createElement('tr');
+        const row = document.createElement("tr");
         row.innerHTML = `
-            <td>${signal.name || 'N/A'}</td>
-            <td>${signal.data_provider || 'N/A'}</td>
-            <td>${signal.coverage_percentage ? signal.coverage_percentage.toFixed(1) + '%' : 'N/A'}</td>
-            <td>${signal.pricing?.cpm ? '$' + signal.pricing.cpm.toFixed(2) : 'N/A'}</td>
-            <td>${signal.deployments?.map(d => d.platform).join(', ') || 'N/A'}</td>
+            <td><strong>${signal.name || "N/A"}</strong></td>
+            <td>${signal.data_provider || "N/A"}</td>
+            <td>${signal.coverage_percentage ? signal.coverage_percentage.toFixed(1) + "%" : "N/A"}</td>
+            <td>${signal.pricing?.cpm ? "$" + signal.pricing.cpm.toFixed(2) : "N/A"}</td>
+            <td>${signal.deployments?.map(d => d.platform).join(", ") || "N/A"}</td>
             <td>
-                <button class="activate-btn" data-signal-id="${signal.signals_agent_segment_id}">
+                <button class="activate-btn" onclick="activateSignal('${signal.signals_agent_segment_id}')">
                     Activate
                 </button>
             </td>
         `;
         tableBody.appendChild(row);
     });
+}    });
     
     // Bind table events using event delegation
     bindTableEvents();
