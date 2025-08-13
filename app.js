@@ -217,6 +217,14 @@ function displayResults(results) {
     
     console.log('Table updated successfully');
     
+    // Ensure signals tab is active by default
+    const signalsTab = document.getElementById('signals-tab');
+    if (signalsTab) {
+        const signalsTabButton = new bootstrap.Tab(signalsTab);
+        signalsTabButton.show();
+        console.log('Signals tab activated by default');
+    }
+    
     // Update metrics
     updateMetrics(results);
 }
@@ -318,12 +326,8 @@ function displayProposals(proposals) {
             proposalsTab.style.display = 'block';
             console.log('Proposals tab is now visible');
             
-            // Automatically switch to the proposals tab after a short delay
-            setTimeout(() => {
-                const proposalsTabButton = new bootstrap.Tab(proposalsTab);
-                proposalsTabButton.show();
-                console.log('Automatically switched to proposals tab');
-            }, 1000);
+            // Show alert about available proposals but keep signals tab active by default
+            showAlert(`🎯 ${proposals.length} AI-generated custom segments available! Click the "AI Proposed Custom Segments" tab to view them.`, 'info');
         }
     }
 }
