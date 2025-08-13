@@ -4,8 +4,7 @@
   "description": "AI-Powered Audience Targeting Platform",
   "main": "index.html",
   "scripts": {
-    "start": "serve -s .",
-    
+    "start": "serve -s ."
   },
   "keywords": ["ai", "audience", "targeting", "platform"],
   "author": "GupAd Team",
