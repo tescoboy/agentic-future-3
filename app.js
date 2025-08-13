@@ -189,6 +189,7 @@ function displayResults(results) {
         // Extract data from backend format
         const name = signal.name || 'N/A';
         const type = signal.signal_type || signal.type || 'Unknown';
+        const provider = signal.data_provider || 'N/A';
         const platform = signal.deployments && signal.deployments.length > 0 ? signal.deployments[0].platform : 'N/A';
         const coverage = signal.coverage_percentage ? `${signal.coverage_percentage.toFixed(1)}%` : 'N/A';
         const cpm = signal.pricing && signal.pricing.cpm ? `$${signal.pricing.cpm.toFixed(2)}` : 'N/A';
@@ -198,6 +199,7 @@ function displayResults(results) {
         row.innerHTML = `
             <td>${name}</td>
             <td><span class="badge bg-primary">${type}</span></td>
+            <td>${provider}</td>
             <td>${platform}</td>
             <td>${coverage}</td>
             <td>${cpm}</td>
