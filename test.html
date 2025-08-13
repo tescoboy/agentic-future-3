@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test AI Proposals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Proposals Test</h1>
+        
+        <div class="test-section">
+            <h3>Test Backend API</h3>
+            <button class="btn btn-primary" onclick="testBackend()">Test Backend</button>
+            <div id="backendResult" class="mt-3"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Proposals Display</h3>
+            <button class="btn btn-success" onclick="testProposalsDisplay()">Test Display</button>
+            <div id="proposalsResult" class="mt-3"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testBackend() {
+            const resultDiv = document.getElementById('backendResult');
+            resultDiv.innerHTML = '<p>Testing backend...</p>';
+            
+            try {
+                const response = await fetch('https://signals-agent-backend.onrender.com/api/signals?spec=luxury%20cars&max_results=3');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5>Backend Response:</h5>
+                        <p><strong>Signals found:</strong> ${data.signals ? data.signals.length : 0}</p>
+                        <p><strong>Custom proposals:</strong> ${data.custom_segment_proposals ? data.custom_segment_proposals.length : 0}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function testProposalsDisplay() {
+            const resultDiv = document.getElementById('proposalsResult');
+            
+            // Mock proposals data
+            const mockProposals = [
+                {
+                    proposed_name: "Luxury Car Comparison & Review Seekers",
+                    description: "Targets users actively researching and comparing different luxury car models.",
+                    estimated_coverage_percentage: 1.8,
+                    estimated_cpm: 7.25,
+                    creation_rationale: "This segment goes beyond general 'Luxury Cars' content by identifying users actively in the decision-making process.",
+                    custom_segment_id: "custom_1_1661"
+                },
+                {
+                    proposed_name: "Luxury EV Car Enthusiasts",
+                    description: "Focuses on users showing specific interest in luxury electric vehicles (EVs).",
+                    estimated_coverage_percentage: 2.2,
+                    estimated_cpm: 7.0,
+                    creation_rationale: "This segment is unique because it isolates the subset of luxury car enthusiasts who are specifically interested in electric vehicles.",
+                    custom_segment_id: "custom_2_9924"
+                }
+            ];
+            
+            let proposalsHTML = '';
+            mockProposals.forEach(proposal => {
+                proposalsHTML += `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">${proposal.proposed_name}</h6>
+                            <p class="card-text text-muted">${proposal.description}</p>
+                            <p class="card-text"><small class="text-info"><strong>Rationale:</strong> ${proposal.creation_rationale}</small></p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Estimated Coverage: ${proposal.estimated_coverage_percentage}%</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">Estimated CPM: $${proposal.estimated_cpm.toFixed(2)}</small>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-primary mt-2" onclick="alert('Activating: ${proposal.proposed_name}')">
+                                <i class="bi bi-robot me-1"></i>Activate AI Segment
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <h5>Mock Proposals Display:</h5>
+                    <p><strong>Proposals count:</strong> ${mockProposals.length}</p>
+                    ${proposalsHTML}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

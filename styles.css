@@ -332,3 +332,57 @@ body {
     60% { content: '..'; }
     80%, 100% { content: '...'; }
 }
+
+/* AI Proposals Tab Styling */
+.ai-proposals-tab {
+    display: block !important;
+}
+
+.ai-proposals-tab .nav-link {
+    color: #007bff;
+    border-color: #007bff;
+}
+
+.ai-proposals-tab .nav-link.active {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Ensure proposals tab is visible */
+#proposals-tab {
+    display: block !important;
+}
+
+/* Proposals content styling */
+#proposals .card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: white;
+}
+
+#proposals .card-title {
+    color: #333;
+    font-weight: 600;
+}
+
+#proposals .text-info {
+    color: #17a2b8 !important;
+}
+
+/* Tab styling for proposals */
+.nav-tabs .nav-link {
+    color: #6c757d;
+    border: 1px solid transparent;
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.nav-tabs .nav-link.active {
+    color: #495057;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: #e9ecef #e9ecef #dee2e6;
+}

@@ -94,9 +94,12 @@ async function simulateSearch(query) {
         displayResults(results);
         
         // Display custom segment proposals if available
-        if (data.custom_segment_proposals) {
+        console.log('Checking for custom segment proposals:', data.custom_segment_proposals);
+        if (data.custom_segment_proposals && data.custom_segment_proposals.length > 0) {
+            console.log('Found custom segment proposals:', data.custom_segment_proposals);
             displayProposals(data.custom_segment_proposals);
         } else {
+            console.log('No custom segment proposals found, generating fallback proposals');
             generateAIProposals(query);
         }
         
@@ -246,10 +249,27 @@ async function generateAIProposals(query) {
 // Display AI proposals
 function displayProposals(proposals) {
     console.log('Displaying proposals:', proposals);
+    console.log('proposalsContent element:', proposalsContent);
+    console.log('proposalsTabCount element:', proposalsTabCount);
     
-    if (!proposalsContent || !proposalsTabCount) return;
+    if (!proposalsContent || !proposalsTabCount) {
+        console.error('Required elements not found for displaying proposals');
+        return;
+    }
     
     proposalsTabCount.textContent = proposals.length;
+    
+    // Update the metrics display
+    const customProposalsMetric = document.getElementById('customProposals');
+    if (customProposalsMetric) {
+        customProposalsMetric.textContent = proposals.length;
+        console.log('Updated custom proposals metric to:', proposals.length);
+    }
+    
+    // Show notification if we have proposals
+    if (proposals.length > 0) {
+        showAlert(`🎯 ${proposals.length} AI-generated custom segments available! Click the "AI Proposed Custom Segments" tab to view them.`, 'info');
+    }
     
     if (proposals.length === 0) {
         proposalsContent.innerHTML = '<p class="text-muted">No custom proposals available.</p>';
@@ -287,7 +307,25 @@ function displayProposals(proposals) {
         `;
     });
     
+    console.log('Generated proposals HTML:', proposalsHTML);
     proposalsContent.innerHTML = proposalsHTML;
+    console.log('Proposals content updated, new innerHTML:', proposalsContent.innerHTML);
+    
+    // If we have proposals, make sure the proposals tab is visible and clickable
+    if (proposals.length > 0) {
+        const proposalsTab = document.getElementById('proposals-tab');
+        if (proposalsTab) {
+            proposalsTab.style.display = 'block';
+            console.log('Proposals tab is now visible');
+            
+            // Automatically switch to the proposals tab after a short delay
+            setTimeout(() => {
+                const proposalsTabButton = new bootstrap.Tab(proposalsTab);
+                proposalsTabButton.show();
+                console.log('Automatically switched to proposals tab');
+            }, 1000);
+        }
+    }
 }
 
 // Show/hide loading overlay
@@ -377,8 +415,32 @@ function initializeComponents() {
     // Test backend connection
     testBackendConnection();
     
+    // Initialize proposals tab
+    initializeProposalsTab();
+    
     // Add any additional initialization logic here
     // For example, setting up tooltips, modals, etc.
+}
+
+// Initialize proposals tab
+function initializeProposalsTab() {
+    console.log('Initializing proposals tab...');
+    
+    const proposalsTab = document.getElementById('proposals-tab');
+    const proposalsContent = document.getElementById('proposalsContent');
+    
+    if (proposalsTab) {
+        console.log('Proposals tab found:', proposalsTab);
+        proposalsTab.style.display = 'block';
+    } else {
+        console.error('Proposals tab not found!');
+    }
+    
+    if (proposalsContent) {
+        console.log('Proposals content found:', proposalsContent);
+    } else {
+        console.error('Proposals content not found!');
+    }
 }
 
 // Test backend connection
@@ -408,6 +470,7 @@ function updateMetrics(results) {
     const totalSignals = document.getElementById('totalSignals');
     const avgCoverage = document.getElementById('avgCoverage');
     const avgCPM = document.getElementById('avgCPM');
+    const customProposals = document.getElementById('customProposals');
     
     if (totalSignals) {
         totalSignals.textContent = results.length;
@@ -429,6 +492,12 @@ function updateMetrics(results) {
         }, 0);
         const avg = (totalCPM / results.length).toFixed(2);
         avgCPM.textContent = `$${avg}`;
+    }
+    
+    // Update custom proposals count - this will be updated when proposals are displayed
+    if (customProposals) {
+        // This will be updated by displayProposals function
+        console.log('Custom proposals metric element found:', customProposals);
     }
 }
 
