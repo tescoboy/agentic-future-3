@@ -250,6 +250,76 @@ body {
     color: white;
 }
 
+/* Custom badge colors to match purple theme */
+.badge.bg-primary {
+    background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white !important;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Custom button colors to match purple theme */
+.btn-outline-primary {
+    background: transparent !important;
+    border: 2px solid #8B5CF6 !important;
+    color: #8B5CF6 !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%) !important;
+    border-color: #8B5CF6 !important;
+    color: white !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.btn-outline-primary:focus {
+    box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25) !important;
+}
+
+/* Results section background */
+#resultsSection {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    padding: 30px;
+    margin-top: 30px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Table in results section */
+#resultsSection .table {
+    color: #333;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+#resultsSection .table th {
+    background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 15px 12px;
+}
+
+#resultsSection .table td {
+    color: #333;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px;
+    background: white;
+}
+
+#resultsSection .table tbody tr:hover {
+    background: rgba(139, 92, 246, 0.05);
+    transition: all 0.2s ease;
+}
+
 /* Loading dots animation */
 .loading-dots::after {
     content: '';
