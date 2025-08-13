@@ -17,13 +17,26 @@ const proposalsTabCount = document.getElementById('proposalsTabCount');
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing GupAd Orchestration Platform...');
     
+    // Debug: Check if all required elements are found
+    console.log('Search form found:', !!searchForm);
+    console.log('Search input found:', !!searchInput);
+    console.log('Loading overlay found:', !!loadingOverlay);
+    console.log('Signals table body found:', !!signalsTableBody);
+    console.log('Proposals content found:', !!proposalsContent);
+    console.log('Proposals tab count found:', !!proposalsTabCount);
+    
     // Add event listeners
     if (searchForm) {
         searchForm.addEventListener('submit', handleSearch);
+        console.log('Search form event listener added');
+    } else {
+        console.error('Search form not found!');
     }
     
     // Initialize any other components
     initializeComponents();
+    
+    console.log('GupAd Orchestration Platform initialization complete');
 });
 
 // Handle search form submission
@@ -57,7 +70,7 @@ async function simulateSearch(query) {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Mock data
+    // Mock data - more comprehensive and robust
     const mockResults = [
         {
             name: 'High-Value Tech Enthusiasts',
@@ -82,10 +95,29 @@ async function simulateSearch(query) {
             coverage: '8.7M',
             cpm: '$6.25',
             id: 'mobile_users_003'
+        },
+        {
+            name: 'Premium Travelers',
+            type: 'Interest',
+            platform: 'Instagram',
+            coverage: '1.8M',
+            cpm: '$15.20',
+            id: 'premium_travelers_004'
+        },
+        {
+            name: 'Fitness Enthusiasts',
+            type: 'Behavior',
+            platform: 'YouTube',
+            coverage: '3.2M',
+            cpm: '$9.80',
+            id: 'fitness_enthusiasts_005'
         }
     ];
     
+    console.log('Generated mock results:', mockResults);
     currentSearchResults = mockResults;
+    
+    // Display results
     displayResults(mockResults);
     
     // Generate AI proposals
@@ -95,8 +127,12 @@ async function simulateSearch(query) {
 // Display search results
 function displayResults(results) {
     console.log('Displaying results:', results);
+    console.log('Signals table body element:', signalsTableBody);
     
-    if (!signalsTableBody) return;
+    if (!signalsTableBody) {
+        console.error('signalsTableBody element not found!');
+        return;
+    }
     
     // Show results section
     const resultsSection = document.getElementById('resultsSection');
@@ -105,24 +141,38 @@ function displayResults(results) {
         resultsSection.scrollIntoView({ behavior: 'smooth' });
     }
     
+    // Clear existing content
     signalsTableBody.innerHTML = '';
     
-    results.forEach(signal => {
+    // Ensure we have results
+    if (!results || results.length === 0) {
+        console.log('No results to display');
+        signalsTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No signals found</td></tr>';
+        return;
+    }
+    
+    console.log('Adding', results.length, 'rows to table');
+    
+    results.forEach((signal, index) => {
+        console.log('Processing signal', index + 1, ':', signal);
+        
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${signal.name}</td>
-            <td><span class="badge bg-primary">${signal.type}</span></td>
-            <td>${signal.platform}</td>
-            <td>${signal.coverage}</td>
-            <td>${signal.cpm}</td>
+            <td>${signal.name || 'N/A'}</td>
+            <td><span class="badge bg-primary">${signal.type || 'Unknown'}</span></td>
+            <td>${signal.platform || 'N/A'}</td>
+            <td>${signal.coverage || 'N/A'}</td>
+            <td>${signal.cpm || 'N/A'}</td>
             <td>
-                <button class="btn btn-sm btn-outline-primary" onclick="activateSignal('${signal.id}')">
+                <button class="btn btn-sm btn-outline-primary" onclick="activateSignal('${signal.id || 'unknown'}')">
                     <i class="bi bi-plus-circle me-1"></i>Activate
                 </button>
             </td>
         `;
         signalsTableBody.appendChild(row);
     });
+    
+    console.log('Table updated successfully');
     
     // Update metrics
     updateMetrics(results);
