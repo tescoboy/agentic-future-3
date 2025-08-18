@@ -84,65 +84,88 @@ async function simulateSearch(query) {
         let allResults = [];
         let allProposals = [];
         
-        // Search GupAds if selected
+        // Create array of promises for concurrent API calls
+        const apiPromises = [];
+        
+        // Add GupAds API call if selected
         if (useGupAds) {
-            console.log('🔍 Searching GupAds...');
-            try {
-                const gupadsResponse = await fetch(`${BACKEND_URL}/api/signals?spec=${encodeURIComponent(query)}&max_results=${maxResults}`, {
+            console.log('🔍 Adding GupAds API call...');
+            apiPromises.push(
+                fetch(`${BACKEND_URL}/api/signals?spec=${encodeURIComponent(query)}&max_results=${maxResults}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     }
-                });
-                
-                if (gupadsResponse.ok) {
-                    const gupadsData = await gupadsResponse.json();
-                    console.log('GupAds response:', gupadsData);
-                    
-                    const gupadsResults = (gupadsData.signals || []).map(signal => ({
-                        ...signal,
-                        source: 'GupAds'
-                    }));
-                    
-                    allResults = allResults.concat(gupadsResults);
-                    allProposals = allProposals.concat(gupadsData.custom_segment_proposals || []);
-                } else {
-                    console.warn('GupAds API failed:', gupadsResponse.status);
-                }
-            } catch (error) {
-                console.error('GupAds API error:', error);
-            }
+                })
+                .then(async (response) => {
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('GupAds response:', data);
+                        return {
+                            source: 'GupAds',
+                            signals: (data.signals || []).map(signal => ({
+                                ...signal,
+                                source: 'GupAds'
+                            })),
+                            proposals: data.custom_segment_proposals || []
+                        };
+                    } else {
+                        console.warn('GupAds API failed:', response.status);
+                        return { source: 'GupAds', signals: [], proposals: [] };
+                    }
+                })
+                .catch((error) => {
+                    console.error('GupAds API error:', error);
+                    return { source: 'GupAds', signals: [], proposals: [] };
+                })
+            );
         }
         
-        // Search BOKads if selected
+        // Add BOKads API call if selected
         if (useBOKads) {
-            console.log('🔍 Searching BOKads...');
-            try {
-                const bokadsResponse = await fetch(`${BOKADS_PROXY_URL}/api/bokads/search?spec=${encodeURIComponent(query)}&limit=${maxResults}`, {
+            console.log('🔍 Adding BOKads API call...');
+            apiPromises.push(
+                fetch(`${BOKADS_PROXY_URL}/api/bokads/search?spec=${encodeURIComponent(query)}&limit=${maxResults}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     }
-                });
-                
-                if (bokadsResponse.ok) {
-                    const bokadsData = await bokadsResponse.json();
-                    console.log('BOKads response:', bokadsData);
-                    
-                    const bokadsResults = (bokadsData.signals || []).map(signal => ({
-                        ...signal,
-                        source: 'BOKads'
-                    }));
-                    
-                    allResults = allResults.concat(bokadsResults);
-                    allProposals = allProposals.concat(bokadsData.custom_segment_proposals || []);
-                } else {
-                    console.warn('BOKads API failed:', bokadsResponse.status);
-                }
-            } catch (error) {
-                console.error('BOKads API error:', error);
-            }
+                })
+                .then(async (response) => {
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('BOKads response:', data);
+                        return {
+                            source: 'BOKads',
+                            signals: (data.signals || []).map(signal => ({
+                                ...signal,
+                                source: 'BOKads'
+                            })),
+                            proposals: data.custom_segment_proposals || []
+                        };
+                    } else {
+                        console.warn('BOKads API failed:', response.status);
+                        return { source: 'BOKads', signals: [], proposals: [] };
+                    }
+                })
+                .catch((error) => {
+                    console.error('BOKads API error:', error);
+                    return { source: 'BOKads', signals: [], proposals: [] };
+                })
+            );
         }
+        
+        // Execute all API calls concurrently
+        console.log(`🚀 Executing ${apiPromises.length} API calls concurrently...`);
+        const results = await Promise.all(apiPromises);
+        
+        // Combine all results
+        results.forEach(result => {
+            allResults = allResults.concat(result.signals);
+            allProposals = allProposals.concat(result.proposals);
+        });
+        
+        console.log(`✅ All API calls completed. Total signals: ${allResults.length}, Total proposals: ${allProposals.length}`);
         
         // If no results from either API, fall back to mock data
         if (allResults.length === 0) {
