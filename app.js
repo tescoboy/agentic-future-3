@@ -278,6 +278,14 @@ function displayResults(results) {
     
     console.log('Table updated successfully');
     
+    // Ensure signals tab is active by default
+    const signalsTab = document.getElementById('signals-tab');
+    if (signalsTab) {
+        const signalsTabButton = new bootstrap.Tab(signalsTab);
+        signalsTabButton.show();
+        console.log('Signals tab activated by default');
+    }
+    
     // Update metrics
     updateMetrics(results);
 }
