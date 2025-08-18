@@ -7,10 +7,14 @@ let isLoading = false;
 
 // Backend API configuration
 const BACKEND_URL = 'https://signals-agent-backend.onrender.com';
+const BOKADS_PROXY_URL = 'http://localhost:3001';
 
 // DOM elements
 const searchForm = document.getElementById('searchForm');
 const searchInput = document.getElementById('queryInput');
+const maxResultsSelect = document.getElementById('maxResultsSelect');
+const gupadsCheck = document.getElementById('gupadsCheck');
+const bokadsCheck = document.getElementById('bokadsCheck');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const signalsTableBody = document.getElementById('signalsTableBody');
 const proposalsContent = document.getElementById('proposalsContent');
@@ -70,90 +74,145 @@ async function handleSearch(event) {
 async function simulateSearch(query) {
     console.log('Searching backend for:', query);
     
+    const useGupAds = gupadsCheck.checked;
+    const useBOKads = bokadsCheck.checked;
+    const maxResults = parseInt(maxResultsSelect.value);
+    
+    console.log(`GupAds: ${useGupAds}, BOKads: ${useBOKads}, Max results: ${maxResults}`);
+    
     try {
-        // Make API call to backend using the correct endpoint
-        const response = await fetch(`${BACKEND_URL}/api/signals?spec=${encodeURIComponent(query)}&max_results=10`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
+        let allResults = [];
+        let allProposals = [];
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // Search GupAds if selected
+        if (useGupAds) {
+            console.log('🔍 Searching GupAds...');
+            try {
+                const gupadsResponse = await fetch(`${BACKEND_URL}/api/signals?spec=${encodeURIComponent(query)}&max_results=${maxResults}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (gupadsResponse.ok) {
+                    const gupadsData = await gupadsResponse.json();
+                    console.log('GupAds response:', gupadsData);
+                    
+                    const gupadsResults = (gupadsData.signals || []).map(signal => ({
+                        ...signal,
+                        source: 'GupAds'
+                    }));
+                    
+                    allResults = allResults.concat(gupadsResults);
+                    allProposals = allProposals.concat(gupadsData.custom_segment_proposals || []);
+                } else {
+                    console.warn('GupAds API failed:', gupadsResponse.status);
+                }
+            } catch (error) {
+                console.error('GupAds API error:', error);
+            }
         }
         
-        const data = await response.json();
-        console.log('Backend response:', data);
+        // Search BOKads if selected
+        if (useBOKads) {
+            console.log('🔍 Searching BOKads...');
+            try {
+                const bokadsResponse = await fetch(`${BOKADS_PROXY_URL}/api/bokads/search?spec=${encodeURIComponent(query)}&limit=${maxResults}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (bokadsResponse.ok) {
+                    const bokadsData = await bokadsResponse.json();
+                    console.log('BOKads response:', bokadsData);
+                    
+                    const bokadsResults = (bokadsData.signals || []).map(signal => ({
+                        ...signal,
+                        source: 'BOKads'
+                    }));
+                    
+                    allResults = allResults.concat(bokadsResults);
+                    allProposals = allProposals.concat(bokadsData.custom_segment_proposals || []);
+                } else {
+                    console.warn('BOKads API failed:', bokadsResponse.status);
+                }
+            } catch (error) {
+                console.error('BOKads API error:', error);
+            }
+        }
         
-        // Process the response data - backend returns signals array
-        const results = data.signals || [];
-        currentSearchResults = results;
+        // If no results from either API, fall back to mock data
+        if (allResults.length === 0) {
+            console.log('No results from APIs, using fallback mock data');
+            allResults = [
+                {
+                    name: 'High-Value Tech Enthusiasts',
+                    type: 'Interest',
+                    platform: 'Facebook',
+                    coverage: '2.3M',
+                    cpm: '$12.50',
+                    id: 'tech_enthusiasts_001',
+                    source: 'GupAds'
+                },
+                {
+                    name: 'E-commerce Shoppers',
+                    type: 'Behavior',
+                    platform: 'Google',
+                    coverage: '5.1M',
+                    cpm: '$8.75',
+                    id: 'ecommerce_shoppers_002',
+                    source: 'GupAds'
+                },
+                {
+                    name: 'Mobile App Users',
+                    type: 'Demographic',
+                    platform: 'TikTok',
+                    coverage: '8.7M',
+                    cpm: '$6.25',
+                    id: 'mobile_users_003',
+                    source: 'GupAds'
+                },
+                {
+                    name: 'Premium Travelers',
+                    type: 'Interest',
+                    platform: 'Instagram',
+                    coverage: '1.8M',
+                    cpm: '$15.20',
+                    id: 'premium_travelers_004',
+                    source: 'GupAds'
+                },
+                {
+                    name: 'Fitness Enthusiasts',
+                    type: 'Behavior',
+                    platform: 'YouTube',
+                    coverage: '3.2M',
+                    cpm: '$9.80',
+                    id: 'fitness_enthusiasts_005',
+                    source: 'GupAds'
+                }
+            ];
+        }
+        
+        currentSearchResults = allResults;
         
         // Display results
-        displayResults(results);
+        displayResults(allResults);
         
         // Display custom segment proposals if available
-        console.log('Checking for custom segment proposals:', data.custom_segment_proposals);
-        if (data.custom_segment_proposals && data.custom_segment_proposals.length > 0) {
-            console.log('Found custom segment proposals:', data.custom_segment_proposals);
-            displayProposals(data.custom_segment_proposals);
+        if (allProposals.length > 0) {
+            console.log('Found custom segment proposals:', allProposals);
+            displayProposals(allProposals);
         } else {
             console.log('No custom segment proposals found, generating fallback proposals');
             generateAIProposals(query);
         }
         
     } catch (error) {
-        console.error('Backend API error:', error);
-        
-        // Fallback to mock data if backend fails
-        console.log('Falling back to mock data due to backend error');
-        const mockResults = [
-            {
-                name: 'High-Value Tech Enthusiasts',
-                type: 'Interest',
-                platform: 'Facebook',
-                coverage: '2.3M',
-                cpm: '$12.50',
-                id: 'tech_enthusiasts_001'
-            },
-            {
-                name: 'E-commerce Shoppers',
-                type: 'Behavior',
-                platform: 'Google',
-                coverage: '5.1M',
-                cpm: '$8.75',
-                id: 'ecommerce_shoppers_002'
-            },
-            {
-                name: 'Mobile App Users',
-                type: 'Demographic',
-                platform: 'TikTok',
-                coverage: '8.7M',
-                cpm: '$6.25',
-                id: 'mobile_users_003'
-            },
-            {
-                name: 'Premium Travelers',
-                type: 'Interest',
-                platform: 'Instagram',
-                coverage: '1.8M',
-                cpm: '$15.20',
-                id: 'premium_travelers_004'
-            },
-            {
-                name: 'Fitness Enthusiasts',
-                type: 'Behavior',
-                platform: 'YouTube',
-                coverage: '3.2M',
-                cpm: '$9.80',
-                id: 'fitness_enthusiasts_005'
-            }
-        ];
-        
-        currentSearchResults = mockResults;
-        displayResults(mockResults);
-        generateAIProposals(query);
+        console.error('Search error:', error);
+        showAlert('An error occurred during search', 'danger');
     }
 }
 
@@ -192,17 +251,19 @@ function displayResults(results) {
         // Extract data from backend format
         const name = signal.name || 'N/A';
         const type = signal.signal_type || signal.type || 'Unknown';
-        const provider = signal.data_provider || 'N/A';
+        const provider = signal.data_provider || signal.platform || 'N/A';
         const platform = signal.deployments && signal.deployments.length > 0 ? signal.deployments[0].platform : 'N/A';
-        const coverage = signal.coverage_percentage ? `${signal.coverage_percentage.toFixed(1)}%` : 'N/A';
-        const cpm = signal.pricing && signal.pricing.cpm ? `$${signal.pricing.cpm.toFixed(2)}` : 'N/A';
+        const coverage = signal.coverage_percentage ? `${signal.coverage_percentage.toFixed(1)}%` : (signal.coverage || 'N/A');
+        const cpm = signal.pricing && signal.pricing.cpm ? `$${signal.pricing.cpm.toFixed(2)}` : (signal.cpm || 'N/A');
         const id = signal.signals_agent_segment_id || signal.id || 'unknown';
+        const source = signal.source || 'Unknown';
         
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${name}</td>
             <td><span class="badge bg-primary">${type}</span></td>
             <td>${provider}</td>
+            <td><span class="badge ${source === 'GupAds' ? 'bg-success' : 'bg-info'}">${source}</span></td>
             <td>${platform}</td>
             <td>${coverage}</td>
             <td>${cpm}</td>
@@ -266,9 +327,9 @@ function displayProposals(proposals) {
         console.log('Updated custom proposals metric to:', proposals.length);
     }
     
-    // Show notification if we have proposals
+    // Show notification if we have proposals (but don't be intrusive)
     if (proposals.length > 0) {
-        showAlert(`🎯 ${proposals.length} AI-generated custom segments available! Click the "AI Proposed Custom Segments" tab to view them.`, 'info');
+        console.log(`🎯 ${proposals.length} AI-generated custom segments available in the proposals tab`);
     }
     
     if (proposals.length === 0) {
@@ -318,12 +379,8 @@ function displayProposals(proposals) {
             proposalsTab.style.display = 'block';
             console.log('Proposals tab is now visible');
             
-            // Automatically switch to the proposals tab after a short delay
-            setTimeout(() => {
-                const proposalsTabButton = new bootstrap.Tab(proposalsTab);
-                proposalsTabButton.show();
-                console.log('Automatically switched to proposals tab');
-            }, 1000);
+            // Keep the signals tab active by default - don't auto-switch to proposals
+            console.log('Keeping signals tab active - proposals available in separate tab');
         }
     }
 }

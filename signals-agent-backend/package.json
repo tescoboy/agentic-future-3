@@ -1,0 +1,15 @@
+{
+  "name": "gupad-frontend",
+  "version": "1.0.0",
+  "description": "GupAd Frontend",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve -s ."
+  },
+  "keywords": ["frontend", "static"],
+  "author": "GupAd Team",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}
