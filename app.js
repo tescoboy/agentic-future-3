@@ -125,26 +125,12 @@ async function simulateSearch(query) {
         if (useBOKads) {
             console.log('🔍 Adding BOKads API call...');
             apiPromises.push(
-                // Direct MCP call to BOKads endpoint with correct headers
-                fetch('https://audience-agent.fly.dev/mcp', {
-                    method: 'POST',
-                    mode: 'cors',
+                // Use local server for real BOKads data (will be deployed to production)
+                fetch('http://localhost:3001/api/bokads/search?spec=' + encodeURIComponent(query) + '&limit=' + maxResults, {
+                    method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        jsonrpc: '2.0',
-                        id: 1,
-                        method: 'tools/call',
-                        params: {
-                            name: 'get_signals',
-                            arguments: {
-                                query: query,
-                                limit: maxResults
-                            }
-                        }
-                    })
+                    }
                 })
                 .then(async (response) => {
                     if (response.ok) {
@@ -156,22 +142,13 @@ async function simulateSearch(query) {
                             return { source: 'BOKads', signals: [], proposals: [] };
                         }
                         
-                        // Extract signals from the MCP response
-                        const signals = (data.result?.content || []).map(signal => ({
-                            name: signal.name,
-                            type: signal.signal_type || 'marketplace',
-                            platform: signal.data_provider || 'LiveRamp (Bridge)',
-                            coverage: signal.coverage_percentage ? `${signal.coverage_percentage.toFixed(1)}%` : 'Unknown',
-                            cpm: signal.pricing?.cpm ? `$${signal.pricing.cpm.toFixed(2)}` : 'Unknown',
-                            id: signal.signals_agent_segment_id,
-                            source: 'BOKads',
-                            description: signal.description || `BOKads segment for ${query} targeting`
-                        }));
-                        
                         return {
                             source: 'BOKads',
-                            signals: signals,
-                            proposals: data.result?.custom_segment_proposals || []
+                            signals: (data.signals || []).map(signal => ({
+                                ...signal,
+                                source: 'BOKads'
+                            })),
+                            proposals: data.custom_segment_proposals || []
                         };
                     } else {
                         console.warn('BOKads API failed:', response.status);
