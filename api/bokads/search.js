@@ -47,19 +47,51 @@ export default async function handler(req, res) {
 }
 
 /**
- * Fetch real BOKads data from the MCP endpoint
+ * Fetch real BOKads data from the MCP endpoint with proper session handling
  */
 async function fetchRealBOKadsData(spec, limit) {
     try {
-        // Make direct HTTP request to the BOKads MCP endpoint
-        const response = await fetch('https://audience-agent.fly.dev/mcp/', {
+        // First, establish a session with the MCP endpoint
+        const sessionResponse = await fetch('https://audience-agent.fly.dev/mcp/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json, text/event-stream',
             },
             body: JSON.stringify({
                 jsonrpc: '2.0',
                 id: 1,
+                method: 'initialize',
+                params: {
+                    protocolVersion: '2024-11-05',
+                    capabilities: {
+                        tools: {}
+                    },
+                    clientInfo: {
+                        name: 'gupad-production',
+                        version: '1.0.0'
+                    }
+                }
+            })
+        });
+
+        if (!sessionResponse.ok) {
+            throw new Error(`Session initialization failed: ${sessionResponse.status}`);
+        }
+
+        const sessionData = await sessionResponse.json();
+        console.log('Session established:', sessionData);
+
+        // Now make the actual search request
+        const searchResponse = await fetch('https://audience-agent.fly.dev/mcp/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json, text/event-stream',
+            },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 2,
                 method: 'tools/call',
                 params: {
                     name: 'search_signals',
@@ -71,18 +103,18 @@ async function fetchRealBOKadsData(spec, limit) {
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (!searchResponse.ok) {
+            throw new Error(`Search request failed: ${searchResponse.status}`);
         }
 
-        const data = await response.json();
+        const searchData = await searchResponse.json();
         
-        if (data.error) {
-            throw new Error(`MCP error: ${data.error.message}`);
+        if (searchData.error) {
+            throw new Error(`MCP error: ${searchData.error.message}`);
         }
 
         // Extract signals from the MCP response
-        const signals = (data.result?.content || []).map(signal => ({
+        const signals = (searchData.result?.content || []).map(signal => ({
             name: signal.name,
             type: signal.signal_type || 'marketplace',
             platform: signal.data_provider || 'LiveRamp (Bridge)',
@@ -94,7 +126,7 @@ async function fetchRealBOKadsData(spec, limit) {
         }));
 
         // Extract custom proposals if available
-        const customProposals = data.result?.custom_segment_proposals || [];
+        const customProposals = searchData.result?.custom_segment_proposals || [];
 
         return {
             signals: signals,
@@ -106,7 +138,7 @@ async function fetchRealBOKadsData(spec, limit) {
     } catch (error) {
         console.error('Error fetching real BOKads data:', error);
         
-        // If real API fails, return empty results instead of mock data
+        // If MCP fails, return empty results instead of mock data
         return {
             signals: [],
             custom_segment_proposals: [],
