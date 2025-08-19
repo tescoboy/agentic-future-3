@@ -7,11 +7,7 @@ let isLoading = false;
 
 // Backend API configuration
 const BACKEND_URL = 'https://signals-agent-backend.onrender.com';
-<<<<<<< HEAD
 const AUDIENCE_AGENT_URL = 'https://signals-agent-backend.onrender.com';
-=======
-const BOKADS_PROXY_URL = 'https://gupad.vercel.app';
->>>>>>> b0986bbb4c4477d4c07b86f9bea6f36113ccf06e
 
 // DOM elements
 const searchForm = document.getElementById('searchForm');
@@ -129,14 +125,8 @@ async function simulateSearch(query) {
         if (useBOKads) {
             console.log('🔍 Adding BOKads (Audience-Agent) API call...');
             apiPromises.push(
-<<<<<<< HEAD
                 fetch(`${AUDIENCE_AGENT_URL}/audience-agent/signals`, {
                     method: 'POST',
-=======
-                // Use local BOKads proxy for real data
-                fetch('http://localhost:3001/api/bokads/search?spec=' + encodeURIComponent(query) + '&limit=' + maxResults, {
-                    method: 'GET',
->>>>>>> b0986bbb4c4477d4c07b86f9bea6f36113ccf06e
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -152,7 +142,6 @@ async function simulateSearch(query) {
                 .then(async (response) => {
                     if (response.ok) {
                         const data = await response.json();
-<<<<<<< HEAD
                         console.log('BOKads (Audience-Agent) response:', data);
                         return {
                             source: 'BOKads',
@@ -161,31 +150,6 @@ async function simulateSearch(query) {
                                 source: 'BOKads'
                             })),
                             proposals: data.custom_segments || []
-=======
-                        console.log('BOKads response:', data);
-                        
-                        if (data.error) {
-                            console.warn('BOKads A2A error:', data.error);
-                            return { source: 'BOKads', signals: [], proposals: [] };
-                        }
-                        
-                        // Normalize A2A response to match frontend expectations
-                        const normalizedSignals = (data.signals || []).map(signal => ({
-                            name: signal.name,
-                            type: signal.signal_type || 'Audience',
-                            platform: signal.data_provider,
-                            coverage: signal.coverage_percentage ? `${signal.coverage_percentage.toFixed(1)}%` : 'Unknown',
-                            cpm: signal.pricing?.cpm ? `$${signal.pricing.cpm.toFixed(2)}` : 'Unknown',
-                            id: signal.id,
-                            source: 'BOKads',
-                            description: signal.description || `BOKads segment for ${query} targeting`
-                        }));
-                        
-                        return {
-                            source: 'BOKads',
-                            signals: normalizedSignals,
-                            proposals: data.custom_segment_proposals || []
->>>>>>> b0986bbb4c4477d4c07b86f9bea6f36113ccf06e
                         };
                     } else {
                         console.warn('BOKads (Audience-Agent) API failed:', response.status);
