@@ -7,7 +7,7 @@ let isLoading = false;
 
 // Backend API configuration
 const BACKEND_URL = 'https://signals-agent-backend.onrender.com';
-const BOKADS_PROXY_URL = 'http://localhost:3001';
+const BOKADS_PROXY_URL = 'https://gupad.vercel.app';
 
 // DOM elements
 const searchForm = document.getElementById('searchForm');
