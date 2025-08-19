@@ -125,24 +125,54 @@ async function simulateSearch(query) {
         if (useBOKads) {
             console.log('🔍 Adding BOKads API call...');
             apiPromises.push(
-                fetch('http://localhost:3001/api/bokads/search?spec=' + encodeURIComponent(query) + '&limit=' + maxResults, {
-                    method: 'GET',
+                // Use the existing backend's MCP endpoint which handles session management
+                fetch('https://signals-agent-backend.onrender.com/mcp', {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    }
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: 1,
+                        method: 'tools/call',
+                        params: {
+                            name: 'get_signals',
+                            arguments: {
+                                signal_spec: query,
+                                deliver_to: {
+                                    platforms: 'all'
+                                },
+                                max_results: maxResults
+                            }
+                        }
+                    })
                 })
                 .then(async (response) => {
                     if (response.ok) {
                         const data = await response.json();
                         console.log('BOKads response:', data);
                         
+                        if (data.error) {
+                            console.warn('BOKads MCP error:', data.error);
+                            return { source: 'BOKads', signals: [], proposals: [] };
+                        }
+                        
+                        // Extract signals from the MCP response
+                        const signals = (data.result?.signals || []).map(signal => ({
+                            name: signal.name,
+                            type: signal.signal_type || 'marketplace',
+                            platform: signal.data_provider || 'LiveRamp (Bridge)',
+                            coverage: signal.coverage_percentage ? `${signal.coverage_percentage.toFixed(1)}%` : 'Unknown',
+                            cpm: signal.pricing?.cpm ? `$${signal.pricing.cpm.toFixed(2)}` : 'Unknown',
+                            id: signal.signals_agent_segment_id,
+                            source: 'BOKads',
+                            description: signal.description || `BOKads segment for ${query} targeting`
+                        }));
+                        
                         return {
                             source: 'BOKads',
-                            signals: (data.signals || []).map(signal => ({
-                                ...signal,
-                                source: 'BOKads'
-                            })),
-                            proposals: data.custom_segment_proposals || []
+                            signals: signals,
+                            proposals: data.result?.custom_segment_proposals || []
                         };
                     } else {
                         console.warn('BOKads API failed:', response.status);
