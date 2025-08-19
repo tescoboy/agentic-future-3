@@ -125,11 +125,13 @@ async function simulateSearch(query) {
         if (useBOKads) {
             console.log('🔍 Adding BOKads API call...');
             apiPromises.push(
-                // Use the existing backend's MCP endpoint which handles session management
-                fetch('https://signals-agent-backend.onrender.com/mcp', {
+                // Direct MCP call to BOKads endpoint with correct headers
+                fetch('https://audience-agent.fly.dev/mcp', {
                     method: 'POST',
+                    mode: 'cors',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({
                         jsonrpc: '2.0',
@@ -138,11 +140,8 @@ async function simulateSearch(query) {
                         params: {
                             name: 'get_signals',
                             arguments: {
-                                signal_spec: query,
-                                deliver_to: {
-                                    platforms: 'all'
-                                },
-                                max_results: maxResults
+                                query: query,
+                                limit: maxResults
                             }
                         }
                     })
@@ -158,7 +157,7 @@ async function simulateSearch(query) {
                         }
                         
                         // Extract signals from the MCP response
-                        const signals = (data.result?.signals || []).map(signal => ({
+                        const signals = (data.result?.content || []).map(signal => ({
                             name: signal.name,
                             type: signal.signal_type || 'marketplace',
                             platform: signal.data_provider || 'LiveRamp (Bridge)',
