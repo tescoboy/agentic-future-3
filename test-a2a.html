@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Endpoint Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>A2A Endpoint Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Direct A2A Endpoint</h2>
+        <button onclick="testDirectA2A()">Test Direct A2A Call</button>
+        <div id="direct-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: BOKads Proxy</h2>
+        <button onclick="testBOKadsProxy()">Test BOKads Proxy</button>
+        <div id="proxy-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Frontend Integration</h2>
+        <button onclick="testFrontendIntegration()">Test Frontend Integration</button>
+        <div id="frontend-result"></div>
+    </div>
+
+    <script>
+        async function testDirectA2A() {
+            const resultDiv = document.getElementById('direct-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8000/a2a/?query=luxury%20car%20buyers&max_results=3');
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="error"><h3>Error:</h3><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="success"><h3>Success!</h3><p>Found ${data.signals.length} signals</p><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h3>Error:</h3><pre>${error.message}</pre></div>`;
+            }
+        }
+        
+        async function testBOKadsProxy() {
+            const resultDiv = document.getElementById('proxy-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/bokads/search?spec=luxury%20car%20buyers&limit=3');
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="error"><h3>Error:</h3><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="success"><h3>Success!</h3><p>Found ${data.signals.length} signals</p><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h3>Error:</h3><pre>${error.message}</pre></div>`;
+            }
+        }
+        
+        async function testFrontendIntegration() {
+            const resultDiv = document.getElementById('frontend-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                // Simulate the frontend search logic
+                const query = 'luxury car buyers';
+                const maxResults = 3;
+                
+                const apiPromises = [];
+                
+                // Add BOKads API call
+                apiPromises.push(
+                    fetch('http://localhost:3001/api/bokads/search?spec=' + encodeURIComponent(query) + '&limit=' + maxResults, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(async (response) => {
+                        if (response.ok) {
+                            const data = await response.json();
+                            
+                            if (data.error) {
+                                console.warn('BOKads A2A error:', data.error);
+                                return { source: 'BOKads', signals: [], proposals: [] };
+                            }
+                            
+                            return {
+                                source: 'BOKads',
+                                signals: (data.signals || []).map(signal => ({
+                                    ...signal,
+                                    source: 'BOKads'
+                                })),
+                                proposals: data.custom_segment_proposals || []
+                            };
+                        } else {
+                            console.warn('BOKads API failed:', response.status);
+                            return { source: 'BOKads', signals: [], proposals: [] };
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('BOKads API error:', error);
+                        return { source: 'BOKads', signals: [], proposals: [] };
+                    })
+                );
+                
+                const results = await Promise.all(apiPromises);
+                const allResults = results.flatMap(result => result.signals);
+                
+                resultDiv.innerHTML = `<div class="success"><h3>Success!</h3><p>Frontend integration working. Found ${allResults.length} total signals</p><pre>${JSON.stringify(allResults, null, 2)}</pre></div>`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h3>Error:</h3><pre>${error.message}</pre></div>`;
+            }
+        }
+    </script>
+</body>
+</html>

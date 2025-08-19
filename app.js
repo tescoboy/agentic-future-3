@@ -125,7 +125,7 @@ async function simulateSearch(query) {
         if (useBOKads) {
             console.log('🔍 Adding BOKads API call...');
             apiPromises.push(
-                // Use local server for real BOKads data (will be deployed to production)
+                // Use local BOKads proxy for real data
                 fetch('http://localhost:3001/api/bokads/search?spec=' + encodeURIComponent(query) + '&limit=' + maxResults, {
                     method: 'GET',
                     headers: {
@@ -138,16 +138,25 @@ async function simulateSearch(query) {
                         console.log('BOKads response:', data);
                         
                         if (data.error) {
-                            console.warn('BOKads MCP error:', data.error);
+                            console.warn('BOKads A2A error:', data.error);
                             return { source: 'BOKads', signals: [], proposals: [] };
                         }
                         
+                        // Normalize A2A response to match frontend expectations
+                        const normalizedSignals = (data.signals || []).map(signal => ({
+                            name: signal.name,
+                            type: signal.signal_type || 'Audience',
+                            platform: signal.data_provider,
+                            coverage: signal.coverage_percentage ? `${signal.coverage_percentage.toFixed(1)}%` : 'Unknown',
+                            cpm: signal.pricing?.cpm ? `$${signal.pricing.cpm.toFixed(2)}` : 'Unknown',
+                            id: signal.id,
+                            source: 'BOKads',
+                            description: signal.description || `BOKads segment for ${query} targeting`
+                        }));
+                        
                         return {
                             source: 'BOKads',
-                            signals: (data.signals || []).map(signal => ({
-                                ...signal,
-                                source: 'BOKads'
-                            })),
+                            signals: normalizedSignals,
                             proposals: data.custom_segment_proposals || []
                         };
                     } else {
