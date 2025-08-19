@@ -19,13 +19,11 @@ Frontend (localhost:8000)
 ├── styles.css         # Custom styling
 └── package.json       # Node.js dependencies
 
-BOKads Proxy (localhost:3001)
-├── bokads-proxy.js    # Node.js proxy server
-└── Python MCP Client  # Connects to MCP endpoint
-
 Backend Services
 ├── GupAds API         # https://signals-agent-backend.onrender.com
-└── BOKads MCP         # https://audience-agent.fly.dev/mcp/
+└── Audience-Agent     # https://signals-agent-backend.onrender.com/audience-agent/
+    └── Signals        # POST /audience-agent/signals
+    └── Activation     # POST /audience-agent/activate
 ```
 
 ## Quick Start
@@ -35,22 +33,9 @@ Backend Services
 ```bash
 # Install Node.js dependencies
 npm install
-
-# Install Python dependencies (for BOKads MCP client)
-cd ../signals-agent-1
-uv sync
 ```
 
-### 2. Start the BOKads Proxy
-
-```bash
-# Start the BOKads proxy server
-node bokads-proxy.js
-```
-
-The proxy will start on `http://localhost:3001` and connect to the BOKads MCP endpoint.
-
-### 3. Start the Frontend Server
+### 2. Start the Frontend Server
 
 ```bash
 # Start the frontend HTTP server
@@ -58,6 +43,8 @@ python3 -m http.server 8000
 ```
 
 The application will be available at `http://localhost:8000`.
+
+**Note**: The BOKads (Audience-Agent) integration now uses the deployed backend at `https://signals-agent-backend.onrender.com` instead of a local proxy server.
 
 ## Usage
 
@@ -74,21 +61,23 @@ The application will be available at `http://localhost:8000`.
 
 ## API Endpoints
 
-### BOKads Proxy (`localhost:3001`)
-
-- `GET /api/bokads/search?spec={query}&limit={number}&principal={id}`
-  - Search for BOKads signals
-  - Returns normalized signal data and custom proposals
-
-- `GET /health`
-  - Health check endpoint
-  - Returns server status and configuration
-
 ### GupAds Backend (`signals-agent-backend.onrender.com`)
 
 - `GET /api/signals?spec={query}&max_results={number}`
   - Search for GupAds signals
   - Returns signal data and custom proposals
+
+### Audience-Agent Backend (`signals-agent-backend.onrender.com`)
+
+- `POST /audience-agent/signals`
+  - Search for BOKads (Audience-Agent) signals
+  - Request body: `{"signal_spec": "query", "max_results": 5, "deliver_to": {"platforms": "all", "countries": ["US"]}}`
+  - Returns signal data and custom segments
+
+- `POST /audience-agent/activate`
+  - Activate BOKads signals
+  - Request body: `{"signal_id": "id", "platform": "liveramp", "account": "account"}`
+  - Returns activation status and platform segment ID
 
 ## Signal Sources
 
@@ -97,10 +86,11 @@ The application will be available at `http://localhost:8000`.
 - **Protocol**: A2A (AdCP)
 - **Features**: Real-time signal discovery, custom proposals
 
-### BOKads (MCP Protocol)
+### BOKads (Audience-Agent)
 - **Provider**: LiveRamp, Asterisks.com, AlarisPeople, 123Push
-- **Protocol**: MCP (Model Context Protocol)
+- **Protocol**: MCP (Model Context Protocol) via backend proxy
 - **Features**: AI-powered segments, custom proposals, real-time pricing
+- **Integration**: Uses deployed backend at `https://signals-agent-backend.onrender.com`
 
 ## Development
 

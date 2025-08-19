@@ -7,7 +7,7 @@ let isLoading = false;
 
 // Backend API configuration
 const BACKEND_URL = 'https://signals-agent-backend.onrender.com';
-const BOKADS_PROXY_URL = 'http://localhost:3001';
+const AUDIENCE_AGENT_URL = 'https://signals-agent-backend.onrender.com';
 
 // DOM elements
 const searchForm = document.getElementById('searchForm');
@@ -121,35 +121,43 @@ async function simulateSearch(query) {
             );
         }
         
-        // Add BOKads API call if selected
+        // Add BOKads (Audience-Agent) API call if selected
         if (useBOKads) {
-            console.log('🔍 Adding BOKads API call...');
+            console.log('🔍 Adding BOKads (Audience-Agent) API call...');
             apiPromises.push(
-                fetch(`${BOKADS_PROXY_URL}/api/bokads/search?spec=${encodeURIComponent(query)}&limit=${maxResults}`, {
-                    method: 'GET',
+                fetch(`${AUDIENCE_AGENT_URL}/audience-agent/signals`, {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    }
+                    },
+                    body: JSON.stringify({
+                        signal_spec: query,
+                        max_results: maxResults,
+                        deliver_to: {
+                            platforms: "all",
+                            countries: ["US"]
+                        }
+                    })
                 })
                 .then(async (response) => {
                     if (response.ok) {
                         const data = await response.json();
-                        console.log('BOKads response:', data);
+                        console.log('BOKads (Audience-Agent) response:', data);
                         return {
                             source: 'BOKads',
                             signals: (data.signals || []).map(signal => ({
                                 ...signal,
                                 source: 'BOKads'
                             })),
-                            proposals: data.custom_segment_proposals || []
+                            proposals: data.custom_segments || []
                         };
                     } else {
-                        console.warn('BOKads API failed:', response.status);
+                        console.warn('BOKads (Audience-Agent) API failed:', response.status);
                         return { source: 'BOKads', signals: [], proposals: [] };
                     }
                 })
                 .catch((error) => {
-                    console.error('BOKads API error:', error);
+                    console.error('BOKads (Audience-Agent) API error:', error);
                     return { source: 'BOKads', signals: [], proposals: [] };
                 })
             );
@@ -462,9 +470,41 @@ function animateLoadingSteps() {
 }
 
 // Activate signal
-function activateSignal(signalId) {
+async function activateSignal(signalId) {
     console.log('Activating signal:', signalId);
-    showAlert(`Signal "${signalId}" activated successfully!`, 'success');
+    
+    try {
+        // Find the signal in current results to determine source
+        const signal = currentSearchResults.find(s => s.signals_agent_segment_id === signalId || s.id === signalId);
+        
+        if (signal && signal.source === 'BOKads') {
+            // Use audience-agent activation endpoint for BOKads signals
+            const response = await fetch(`${AUDIENCE_AGENT_URL}/audience-agent/activate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    signal_id: signalId,
+                    platform: signal.deployments?.[0]?.platform || 'liveramp',
+                    account: signal.deployments?.[0]?.account || 'default'
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showAlert(`BOKads signal "${signal.name}" activated successfully! Status: ${result.status}`, 'success');
+            } else {
+                showAlert(`Failed to activate BOKads signal: ${response.status}`, 'danger');
+            }
+        } else {
+            // For GupAds signals, use existing logic
+            showAlert(`Signal "${signalId}" activated successfully!`, 'success');
+        }
+    } catch (error) {
+        console.error('Activation error:', error);
+        showAlert(`Failed to activate signal: ${error.message}`, 'danger');
+    }
 }
 
 // Activate AI proposal
